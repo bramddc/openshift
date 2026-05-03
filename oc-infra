@@ -1,0 +1,36 @@
+- name: Deploy nginx on OpenShift
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+
+    - name: Create namespace
+      kubernetes.core.k8s:
+        name: aap-lab
+        kind: Namespace
+        state: present
+
+    - name: Deploy nginx
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx
+            namespace: aap-lab
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: nginx
+            template:
+              metadata:
+                labels:
+                  app: nginx
+              spec:
+                containers:
+                  - name: nginx
+                    image: nginxinc/nginx-unprivileged
+                    ports:
+                      - containerPort: 8080
