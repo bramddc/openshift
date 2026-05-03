@@ -1,30 +1,62 @@
-- name: Deploy nginx on OpenShift
+- name: AAP Lab - ConfigMap and Secret
   hosts: localhost
   gather_facts: no
 
-  tasks:
+  vars:
+    namespace: mohamedbram-dev
 
-    - name: Deploy nginx
+  tasks:
+    - name: Create ConfigMap
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: app-config-aap
+            namespace: "{{ namespace }}"
+          data:
+            APP_MESSAGE: "Hello from AAP"
+
+    - name: Create Secret
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: app-secret-aap
+            namespace: "{{ namespace }}"
+          type: Opaque
+          stringData:
+            APP_PASSWORD: "mysecretpassword"
+
+    - name: Deploy nginx with ConfigMap and Secret
       kubernetes.core.k8s:
         state: present
         definition:
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: nginx
-            namespace: mohamedbram-dev
+            name: nginx-config-secret-aap
+            namespace: "{{ namespace }}"
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: nginx
+                app: nginx-config-secret-aap
             template:
               metadata:
                 labels:
-                  app: nginx
+                  app: nginx-config-secret-aap
               spec:
                 containers:
                   - name: nginx
                     image: nginxinc/nginx-unprivileged
                     ports:
                       - containerPort: 8080
+                    envFrom:
+                      - configMapRef:
+                          name: app-config-aap
+                      - secretRef:
+                          name: app-secret-aap
