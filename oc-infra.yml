@@ -1,75 +1,30 @@
-- name: Deploy Nginx on OpenShift via AAP
+- name: Deploy nginx on OpenShift
   hosts: localhost
   gather_facts: no
 
-  vars:
-    oc_host: "https://api.rm3.7wse.p1.openshiftapps.com:6443"
-    oc_token: "sha256~wjil1Y9TMrYFBBOP8iTOAUIP2BVDc_3v9eljdTCDJDQ"
-    namespace: "mohamedbram-dev"
-
   tasks:
-    - name: Create Deployment nginx
+
+    - name: Deploy nginx
       kubernetes.core.k8s:
-        host: "{{ oc_host }}"
-        api_key: "{{ oc_token }}"
-        validate_certs: false
         state: present
         definition:
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: nginx-aap
-            namespace: "{{ namespace }}"
+            name: nginx
+            namespace: mohamedbram-dev
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: nginx-aap
+                app: nginx
             template:
               metadata:
                 labels:
-                  app: nginx-aap
+                  app: nginx
               spec:
                 containers:
                   - name: nginx
                     image: nginxinc/nginx-unprivileged
                     ports:
                       - containerPort: 8080
-
-    - name: Create Service nginx
-      kubernetes.core.k8s:
-        host: "{{ oc_host }}"
-        api_key: "{{ oc_token }}"
-        validate_certs: false
-        state: present
-        definition:
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: nginx-aap
-            namespace: "{{ namespace }}"
-          spec:
-            selector:
-              app: nginx-aap
-            ports:
-              - port: 80
-                targetPort: 8080
-
-    - name: Create Route nginx
-      kubernetes.core.k8s:
-        host: "{{ oc_host }}"
-        api_key: "{{ oc_token }}"
-        validate_certs: false
-        state: present
-        definition:
-          apiVersion: route.openshift.io/v1
-          kind: Route
-          metadata:
-            name: nginx-aap
-            namespace: "{{ namespace }}"
-          spec:
-            to:
-              kind: Service
-              name: nginx-aap
-            port:
-              targetPort: 80
